@@ -43,7 +43,7 @@ docker run -d \
   --restart unless-stopped \
   --name pyrunner \
   -p 5022:5000 \
-  -v /mnt/sda7/output:/app/output \
+  -v /mnt/sda7/output/modules:/usr/local/lib/python3.9/site-packages \
   w1770946466/pyrunner:latest
 ```
 
