@@ -13,6 +13,10 @@ app = Flask(__name__)
 # 创建一个临时目录来存放生成的文件
 output_dir = tempfile.mkdtemp()
 
+# 设置模块安装目录
+module_install_dir = os.path.join(output_dir, 'modules')
+os.makedirs(module_install_dir, exist_ok=True)
+
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
@@ -48,7 +52,8 @@ def run_code():
 def install_module():
     module = request.json['module']
     try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", module])
+        # 使用 --target 选项将模块安装到指定目录
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--target", module_install_dir, module])
         # 重新加载模块
         importlib.reload(sys.modules[module])
         return jsonify({'message': f'Successfully installed {module}'})
@@ -60,4 +65,4 @@ def download_file(filename):
     return send_from_directory(output_dir, filename, as_attachment=True)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0')
