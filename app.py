@@ -52,13 +52,20 @@ def run_code():
 def install_module():
     module = request.json['module']
     try:
-        # 使用 --target 选项将模块安装到指定目录
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "--target", module_install_dir, module])
+        # 尝试导入模块
+        __import__(module)
+    except ImportError:
+        pass
+
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", module])
         # 重新加载模块
         importlib.reload(sys.modules[module])
         return jsonify({'message': f'Successfully installed {module}'})
     except subprocess.CalledProcessError:
         return jsonify({'message': f'Failed to install {module}'})
+    except KeyError:
+        return jsonify({'message': f'Module {module} installed but not reloaded'})
 
 @app.route('/output/<path:filename>')
 def download_file(filename):
