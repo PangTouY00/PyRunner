@@ -30,6 +30,17 @@
             animation: spin 1s ease-in-out infinite;
             margin-right: 8px;
         }
+
+        .code-editor-container {
+            position: relative;
+        }
+
+        .clear-code-btn {
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 10;
+        }
     </style>
 </head>
 
@@ -46,7 +57,10 @@
                 class="bg-blue-500 text-white px-4 py-2 rounded mt-2 w-full">Install
                 Module</button>
         </div>
-        <textarea id="code" class="w-full h-64 mb-4"></textarea>
+        <div class="code-editor-container">
+            <button id="clearCodeBtn" class="clear-code-btn bg-red-500 text-white px-4 py-2 rounded">Clear Code</button>
+            <textarea id="code" class="w-full h-64 mb-4"></textarea>
+        </div>
         <button onclick="runCode()" id="runCodeBtn" class="bg-green-500 text-white px-4 py-2 rounded w-full">Run
             Code</button>
         <div class="mt-4">
@@ -125,6 +139,10 @@
         document.getElementById('installModuleBtn').addEventListener('click', function () {
             const moduleInputContainer = document.getElementById('moduleInputContainer');
             moduleInputContainer.classList.toggle('hidden');
+        });
+
+        document.getElementById('clearCodeBtn').addEventListener('click', function () {
+            editor.setValue('');
         });
     </script>
 </body>
