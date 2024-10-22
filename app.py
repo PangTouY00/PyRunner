@@ -5,7 +5,6 @@ import io
 import contextlib
 import importlib
 import json
-import os
 
 app = Flask(__name__)
 
@@ -44,32 +43,31 @@ def run_code():
 def install_module():
     module = request.json['module']
     
-    # 检查并创建 output 文件夹
-    output_dir = os.path.join(os.getcwd(), 'output')
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    
     try:
         # 尝试导入模块
         __import__(module)
+        return jsonify({'message': f'Module {module} is already installed'})
     except ImportError:
         pass
 
     try:
-        # 使用 pip 安装模块到 output 文件夹
-        subprocess.check_call([sys.executable, "-m", "pip", "install", module, "--target", output_dir])
+        # 使用 pip 安装模块
+        subprocess.check_call([sys.executable, "-m", "pip", "install", module])
         
         # 重新加载模块
         if module in sys.modules:
             importlib.reload(sys.modules[module])
+        else:
+            # 动态导入模块
+            importlib.import_module(module)
         
-        return jsonify({'message': f'Successfully installed {module} to {output_dir}'})
-    except subprocess.CalledProcessError:
-        return jsonify({'message': f'Failed to install {module}'})
-    except KeyError:
-        return jsonify({'message': f'Module {module} installed but not reloaded'})
-
-
+        return jsonify({'message': f'Successfully installed and reloaded {module}'})
+    except subprocess.CalledProcessError as e:
+        return jsonify({'message': f'Failed to install {module}', 'error': str(e)})
+    except ImportError as e:
+        return jsonify({'message': f'Module {module} installed but not reloaded', 'error': str(e)})
+    except Exception as e:
+        return jsonify({'message': f'An unexpected error occurred', 'error': str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
