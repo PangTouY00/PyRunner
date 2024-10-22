@@ -37,6 +37,15 @@ docker build -t your-dockerhub-username/pyrunner:latest .
 ```
 docker run -p 5000:5000 -v $(pwd)/output:/app/output your-dockerhub-username/pyrunner:latest
 ```
+或直接用现成的
+```
+docker run -d \
+  --restart unless-stopped \
+  --name pyrunner \
+  -p 5022:5000 \
+  -v /mnt/sda7/output:/app/output \
+  w1770946466/pyrunner:latest
+```
 
 ## 4. 访问应用
 在浏览器中访问 http://localhost:5000，你应该能够看到你的 Flask 应用正在运行。
