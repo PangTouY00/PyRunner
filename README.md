@@ -21,7 +21,8 @@ your-project-name/
 ├── app.py
 ├── index.html
 ├── requirements.txt
-└── README.md```
+└── README.md
+```
 
 ## 快速开始
 ## 1. 克隆项目
