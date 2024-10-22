@@ -5,8 +5,13 @@ import io
 import contextlib
 import importlib
 import json
+import os
+import tempfile
 
 app = Flask(__name__)
+
+# 创建一个临时目录来存放生成的文件
+output_dir = tempfile.mkdtemp()
 
 @app.route('/')
 def index():
@@ -23,7 +28,7 @@ def run_code():
     with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
         try:
             # 在安全的环境中执行代码
-            exec(code, globals())
+            exec(code, {'__file__': os.path.join(output_dir, 'temp.py')})
         except Exception as e:
             print(f"Error: {str(e)}")
     
@@ -42,32 +47,22 @@ def run_code():
 @app.route('/install', methods=['POST'])
 def install_module():
     module = request.json['module']
-    
     try:
-        # 尝试导入模块
-        __import__(module)
-        return jsonify({'message': f'Module {module} is already installed'})
-    except ImportError:
-        pass
-
-    try:
-        # 使用 pip 安装模块
         subprocess.check_call([sys.executable, "-m", "pip", "install", module])
-        
+        # 尝试导入模块
+        try:
+            __import__(module)
+        except ImportError:
+            return jsonify({'message': f'Successfully installed {module}, but failed to import it'})
         # 重新加载模块
-        if module in sys.modules:
-            importlib.reload(sys.modules[module])
-        else:
-            # 动态导入模块
-            importlib.import_module(module)
-        
+        importlib.reload(sys.modules[module])
         return jsonify({'message': f'Successfully installed and reloaded {module}'})
-    except subprocess.CalledProcessError as e:
-        return jsonify({'message': f'Failed to install {module}', 'error': str(e)})
-    except ImportError as e:
-        return jsonify({'message': f'Module {module} installed but not reloaded', 'error': str(e)})
-    except Exception as e:
-        return jsonify({'message': f'An unexpected error occurred', 'error': str(e)})
+    except subprocess.CalledProcessError:
+        return jsonify({'message': f'Failed to install {module}'})
+
+@app.route('/output/<path:filename>')
+def download_file(filename):
+    return send_from_directory(output_dir, filename, as_attachment=True)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0')
