@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Python IDE</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/codemirror.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/theme/dracula.min.css" rel="stylesheet">
+    <style>
+        /* 添加一个简单的旋转动画 */
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <div class="flex items-center mb-4">
+            <h1 class="text-2xl font-bold mr-4">Online Python IDE</h1>
+            <button id="installModuleBtn"
+                class="bg-white text-blue-500 px-4 py-2 rounded border border-blue-500">Install Module</button>
+        </div>
+        <div id="moduleInputContainer" class="mb-4 hidden">
+            <input type="text" id="module" placeholder="Enter module name" class="border p-2 rounded w-full">
+            <button onclick="installModule()" id="installBtn"
+                class="bg-blue-500 text-white px-4 py-2 rounded mt-2 w-full">Install
+                Module</button>
+        </div>
+        <textarea id="code" class="w-full h-64 mb-4"></textarea>
+        <button onclick="runCode()" id="runCodeBtn" class="bg-green-500 text-white px-4 py-2 rounded w-full">Run
+            Code</button>
+        <div class="mt-4">
+            <h2 class="text-xl font-bold mb-2">Output:</h2>
+            <pre id="output" class="bg-gray-200 p-4 rounded whitespace-pre-wrap w-full"></pre>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/mode/python/python.min.js"></script>
+    <script>
+        var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+            lineNumbers: true,
+            mode: "python",
+            theme: "dracula"
+        });
+
+        async function runCode() {
+            const runCodeBtn = document.getElementById('runCodeBtn');
+            const output = document.getElementById('output');
+            const code = editor.getValue();
+
+            // 清空输出区域
+            output.textContent = '';
+
+            runCodeBtn.disabled = true;
+            runCodeBtn.innerHTML = '<span class="loading"></span> Running...';
+
+            try {
+                const response = await fetch('/run', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code }),
+                });
+                const data = await response.json();
+                output.textContent = data.output;
+            } catch (error) {
+                output.textContent = 'Error: Failed to run code';
+            }
+
+            runCodeBtn.disabled = false;
+            runCodeBtn.textContent = 'Run Code';
+        }
+
+        async function installModule() {
+            const module = document.getElementById('module').value;
+            const installBtn = document.getElementById('installBtn');
+            const output = document.getElementById('output');
+
+            // 清空输出区域
+            output.textContent = '';
+
+            installBtn.disabled = true;
+            installBtn.innerHTML = '<span class="loading"></span> Installing...';
+
+            try {
+                const response = await fetch('/install', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ module }),
+                });
+                const data = await response.json();
+                output.textContent += `\n${data.message}`;
+            } catch (error) {
+                output.textContent += '\nError: Failed to install module';
+            }
+
+            installBtn.disabled = false;
+            installBtn.textContent = 'Install Module';
+        }
+
+        document.getElementById('installModuleBtn').addEventListener('click', function () {
+            const moduleInputContainer = document.getElementById('moduleInputContainer');
+            moduleInputContainer.classList.toggle('hidden');
+        });
+    </script>
+</body>
+
+</html>
