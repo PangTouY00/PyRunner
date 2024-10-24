@@ -5,12 +5,8 @@ import io
 import contextlib
 import importlib
 import json
-import os
 
 app = Flask(__name__)
-
-# 定义虚拟环境的 site-packages 目录
-VENV_SITE_PACKAGES = os.path.join(os.getcwd(), 'venv', 'lib', 'python' + sys.version[:3], 'site-packages')
 
 @app.route('/')
 def index():
@@ -55,11 +51,8 @@ def install_module():
         pass
 
     try:
-        # 设置 PYTHONPATH 为虚拟环境的 site-packages 目录
-        os.environ['PYTHONPATH'] = VENV_SITE_PACKAGES
-        
-        # 使用 pip 安装模块到虚拟环境的 site-packages 目录
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "--target", VENV_SITE_PACKAGES, module])
+        # 使用 pip 安装模块到用户目录
+        subprocess.check_call([sys.executable, "-m", "pip", "install", module, "--user"])
         
         # 重新加载模块
         if module in sys.modules:
