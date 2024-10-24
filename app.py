@@ -5,7 +5,6 @@ import io
 import contextlib
 import importlib
 import json
-import os
 
 app = Flask(__name__)
 
@@ -44,24 +43,16 @@ def run_code():
 def install_module():
     module = request.json['module']
     
-    # 检查并创建 output/Module 文件夹
-    output_dir = os.path.join(os.getcwd(), 'output', 'Module')
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    
     try:
         # 尝试导入模块
         __import__(module)
+        return jsonify({'message': f'Module {module} is already installed'})
     except ImportError:
         pass
 
     try:
-        # 使用 pip 安装模块到 output/Module 文件夹
-        subprocess.check_call([sys.executable, "-m", "pip", "install", module, "--target", output_dir])
-        
-        # 将 output/Module 文件夹添加到 sys.path
-        if output_dir not in sys.path:
-            sys.path.append(output_dir)
+        # 使用 pip 安装模块到用户目录
+        subprocess.check_call([sys.executable, "-m", "pip", "install", module, "--user"])
         
         # 重新加载模块
         if module in sys.modules:
@@ -70,7 +61,7 @@ def install_module():
             # 动态导入模块
             importlib.import_module(module)
         
-        return jsonify({'message': f'Successfully installed and reloaded {module} from {output_dir}'})
+        return jsonify({'message': f'Successfully installed and reloaded {module}'})
     except subprocess.CalledProcessError as e:
         return jsonify({'message': f'Failed to install {module}', 'error': str(e)})
     except ImportError as e:
