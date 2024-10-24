@@ -5,8 +5,14 @@ import io
 import contextlib
 import importlib
 import json
+import os
+import logging
 
 app = Flask(__name__)
+
+# 设置日志记录
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 @app.route('/')
 def index():
@@ -51,22 +57,31 @@ def install_module():
         pass
 
     try:
-        # 使用 pip 安装模块到用户目录
-        subprocess.check_call([sys.executable, "-m", "pip", "install", module, "--user"])
+        # 使用 pip 安装模块到默认路径
+        result = subprocess.run([sys.executable, "-m", "pip", "install", module], capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            logger.error(f'Failed to install {module}: {result.stderr}')
+            return jsonify({'message': f'Failed to install {module}', 'error': result.stderr})
+        
+        logger.debug(f'Module {module} installed successfully')
         
         # 重新加载模块
-        if module in sys.modules:
-            importlib.reload(sys.modules[module])
-        else:
-            # 动态导入模块
-            importlib.import_module(module)
-        
-        return jsonify({'message': f'Successfully installed and reloaded {module}'})
-    except subprocess.CalledProcessError as e:
-        return jsonify({'message': f'Failed to install {module}', 'error': str(e)})
-    except ImportError as e:
-        return jsonify({'message': f'Module {module} installed but not reloaded', 'error': str(e)})
+        try:
+            if module in sys.modules:
+                importlib.reload(sys.modules[module])
+                logger.debug(f'Module {module} reloaded successfully')
+            else:
+                # 动态导入模块
+                importlib.import_module(module)
+                logger.debug(f'Module {module} imported successfully')
+            
+            return jsonify({'message': f'Successfully installed and reloaded {module}'})
+        except ImportError as e:
+            logger.error(f'Module {module} installed but not reloaded: {str(e)}')
+            return jsonify({'message': f'Module {module} installed but not reloaded', 'error': str(e)})
     except Exception as e:
+        logger.error(f'An unexpected error occurred: {str(e)}')
         return jsonify({'message': f'An unexpected error occurred', 'error': str(e)})
 
 if __name__ == '__main__':
