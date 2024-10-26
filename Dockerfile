@@ -1,5 +1,5 @@
-# 使用官方的 Python 运行时作为父镜像
-FROM python:3.8-slim
+# 使用官方的 Alpine Python 运行时作为父镜像
+FROM python:3.8-alpine
 
 # 设置工作目录
 WORKDIR /usr/src/app
@@ -11,11 +11,11 @@ COPY . .
 RUN pip install --upgrade pip
 
 # 安装lxml的依赖库
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apk update && apk add --no-cache \
+    gcc \
+    musl-dev \
     libxml2-dev \
-    libxslt-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    libxslt-dev
 
 # 安装依赖
 RUN pip install --no-cache-dir -r requirements.txt
@@ -25,4 +25,3 @@ EXPOSE 5000
 
 # 运行应用
 CMD ["python", "./app.py"]
- 
