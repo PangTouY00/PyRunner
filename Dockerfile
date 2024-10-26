@@ -10,6 +10,13 @@ COPY . .
 # 更新 pip
 RUN pip install --upgrade pip
 
+# 安装lxml的依赖库
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libxml2-dev \
+    libxslt-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # 安装依赖
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -18,3 +25,4 @@ EXPOSE 5000
 
 # 运行应用
 CMD ["python", "./app.py"]
+ 
